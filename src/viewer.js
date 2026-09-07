@@ -18,6 +18,7 @@ export function createViewer(canvas, onContextLost, onStateChange = () => {}, pa
   scene.add(terrain);
   const followTarget = new THREE.Vector3();
   const cameraForward = new THREE.Vector3();
+  const followOffset = new THREE.Vector3();
   const contactSize = new THREE.Vector2(1, 1);
   scene.background = new THREE.Color("#eae8e1");
   const renderer = new THREE.WebGLRenderer({
@@ -27,6 +28,9 @@ export function createViewer(canvas, onContextLost, onStateChange = () => {}, pa
     powerPreference: "high-performance",
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  // Lens covers occupy a small part of the viewport. Keep their optical
+  // materials, but avoid a second full-size scene render just for refraction.
+  renderer.transmissionResolutionScale = 0.5;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.shadowMap.autoUpdate = false;
@@ -140,28 +144,36 @@ export function createViewer(canvas, onContextLost, onStateChange = () => {}, pa
   let modelId = 'orbit';
   let lastReport = 0;
   let input;
+  let needsRender = true;
   const stepper = createStepper((dt) => {
+    let changed;
     if (mode === 'control') {
       cameraForward.copy(controls.target).sub(camera.position).setY(0).normalize();
       const state = motion.step(dt, input.read(), cameraForward);
-      current.update(dt, state);
+      changed = current.update(dt, state) !== false
+        || actor.position.x !== state.position.x || actor.position.y !== state.position.y
+        || actor.position.z !== state.position.z || actor.rotation.y !== state.heading;
       actor.position.set(state.position.x, state.position.y, state.position.z);
       actor.rotation.y = state.heading;
       followTarget.copy(homeTarget).add(actor.position);
-      const offset = followTarget.clone().sub(controls.target);
-      camera.position.add(offset);
+      followOffset.copy(followTarget).sub(controls.target);
+      camera.position.add(followOffset);
       controls.target.copy(followTarget);
     } else {
       elapsed += dt;
-      current.update(dt, { ...motion.state, mode: 'inspect', time: elapsed });
+      changed = current.update(dt, { ...motion.state, mode: 'inspect', time: elapsed }) !== false;
     }
-    renderer.shadowMap.needsUpdate = true;
-    studioDirty = true;
+    if (changed) {
+      needsRender = true;
+      renderer.shadowMap.needsUpdate = true;
+      studioDirty = true;
+    }
   });
   let lastFrame = 0;
   let disposed = false;
   let interrupted = false;
   let frame = 0;
+  let canvasVisible = true;
 
   const reportState = () => onStateChange({
     playing, paused, mode, autoRotate: controls.autoRotate,
@@ -176,10 +188,11 @@ export function createViewer(canvas, onContextLost, onStateChange = () => {}, pa
     contact.scale.set(contactSize.x * spread, contactSize.y * spread, 1);
     contactMaterial.opacity = 1 / (1 + p.y * 0.55);
   }
-  function requestRender() {
+  function scheduleFrame() {
     if (!frame && !capturing && !disposed && !interrupted && !document.hidden)
       frame = requestAnimationFrame(render);
   }
+  function requestRender() { needsRender = true; scheduleFrame(); }
   function render(now) {
     frame = 0;
     if (disposed || interrupted || capturing || document.hidden) return;
@@ -191,11 +204,14 @@ export function createViewer(canvas, onContextLost, onStateChange = () => {}, pa
     }
     if (mode === 'photo') photograph.controls.update(delta);
     else controls.update(delta);
-    if (mode !== 'control' && studioDirty) { studio.updateShadow(); studioDirty = false; }
-    if (mode === 'photo') photoRenderer.render(studio.scene, photograph.camera, photoSettings.exposure);
-    else renderer.render(mode === 'control' ? scene : studio.scene, camera);
+    if (needsRender && canvasVisible) {
+      if (mode !== 'control' && studioDirty) { studio.updateShadow(); studioDirty = false; }
+      if (mode === 'photo') photoRenderer.render(studio.scene, photograph.camera, photoSettings.exposure);
+      else renderer.render(mode === 'control' ? scene : studio.scene, camera);
+      needsRender = false;
+    }
     if (now - lastReport > 100) { reportState(); lastReport = now; }
-    if ((mode === 'control' && !paused) || playing || controls.autoRotate) requestRender();
+    if ((mode === 'control' && !paused) || playing || controls.autoRotate) scheduleFrame();
   }
   controls.addEventListener("change", requestRender);
 
@@ -277,7 +293,10 @@ export function createViewer(canvas, onContextLost, onStateChange = () => {}, pa
   function resize() {
     const rect = canvas.getBoundingClientRect();
     if (!rect.width || !rect.height || disposed) return;
-    const nextPixelRatio = Math.min(window.devicePixelRatio, 2);
+    // Bound the live framebuffer on Retina/large displays. HTML remains at
+    // native resolution; high-resolution PNG capture uses its own target.
+    const nextPixelRatio = Math.min(window.devicePixelRatio, 2,
+      Math.sqrt(1_250_000 / (rect.width * rect.height)));
     if (rect.width === width && rect.height === height) {
       if (pixelRatio !== nextPixelRatio) {
         pixelRatio = nextPixelRatio;
@@ -532,6 +551,11 @@ export function createViewer(canvas, onContextLost, onStateChange = () => {}, pa
   };
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(canvas);
+  const visibilityObserver = new IntersectionObserver(([entry]) => {
+    canvasVisible = entry.isIntersecting;
+    if (canvasVisible) { lastFrame = 0; requestRender(); }
+  });
+  visibilityObserver.observe(canvas);
   window.addEventListener("resize", resize);
 
   canvas.addEventListener("webglcontextlost", handleContextLost);
@@ -562,6 +586,7 @@ export function createViewer(canvas, onContextLost, onStateChange = () => {}, pa
       disposed = true;
       cancelAnimationFrame(frame);
       resizeObserver.disconnect();
+      visibilityObserver.disconnect();
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", handleVisibility);
       reducedMotion.removeEventListener("change", handleMotionPreference);

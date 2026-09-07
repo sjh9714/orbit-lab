@@ -9,15 +9,16 @@ export default defineConfig({
   reporter: "list",
   use: {
     channel: "chromium",
-    baseURL: "http://127.0.0.1:5174",
+    baseURL: "http://127.0.0.1:5181",
     viewport: { width: 1440, height: 1000 },
     reducedMotion: "reduce",
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "npm run dev -- --port 5174 --strictPort",
-    url: "http://127.0.0.1:5174",
-    reuseExistingServer: !process.env.CI,
+    command: "npm run dev -- --port 5181 --strictPort",
+    url: "http://127.0.0.1:5181",
+    // Never silently reuse a different local project's Vite server.
+    reuseExistingServer: false,
   },
 });

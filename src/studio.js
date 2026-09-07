@@ -158,13 +158,15 @@ export function createStudio(renderer) {
   const center = new THREE.Vector3();
 
   function withRendererState(render) {
-    const gl = renderer.getContext();
+    const target = renderer.getRenderTarget();
     const state = {
-      target: renderer.getRenderTarget(), face: renderer.getActiveCubeFace(),
+      target, face: renderer.getActiveCubeFace(),
       mip: renderer.getActiveMipmapLevel(),
       viewport: renderer.getCurrentViewport(new THREE.Vector4()),
-      scissor: new THREE.Vector4().fromArray(gl.getParameter(gl.SCISSOR_BOX)),
-      scissorTest: gl.isEnabled(gl.SCISSOR_TEST),
+      // Read Three.js's cached state. Querying GL here synchronizes the CPU
+      // with the GPU on every animated contact-shadow frame.
+      scissor: target ? target.scissor.clone() : renderer.getScissor(new THREE.Vector4()).multiplyScalar(renderer.getPixelRatio()).floor(),
+      scissorTest: target ? target.scissorTest : renderer.getScissorTest(),
       clearColor: renderer.getClearColor(new THREE.Color()), clearAlpha: renderer.getClearAlpha(),
       autoClear: renderer.autoClear, autoClearColor: renderer.autoClearColor,
       autoClearDepth: renderer.autoClearDepth, autoClearStencil: renderer.autoClearStencil,

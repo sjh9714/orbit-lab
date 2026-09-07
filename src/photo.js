@@ -78,12 +78,15 @@ export function createPhotoRenderer(renderer) {
   function draw(scene, camera, hdr, destination, exposure) {
     const oldTarget = renderer.getRenderTarget();
     const oldExposure = renderer.toneMappingExposure;
+    const oldTransmissionScale = renderer.transmissionResolutionScale;
     const viewport = renderer.getViewport(new THREE.Vector4());
     const scissor = renderer.getScissor(new THREE.Vector4());
     const scissorTest = renderer.getScissorTest();
     try {
       renderer.setScissorTest(false);
       renderer.toneMappingExposure = exposure * 1.1;
+      // Photography uses full optical resolution in both preview and files.
+      renderer.transmissionResolutionScale = 1;
       renderer.setRenderTarget(hdr);
       renderer.clear();
       renderer.render(scene, camera);
@@ -91,6 +94,7 @@ export function createPhotoRenderer(renderer) {
       output.render(renderer, destination, hdr);
     } finally {
       renderer.toneMappingExposure = oldExposure;
+      renderer.transmissionResolutionScale = oldTransmissionScale;
       renderer.setRenderTarget(oldTarget);
       renderer.setViewport(viewport);
       renderer.setScissor(scissor);

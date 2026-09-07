@@ -45,6 +45,7 @@ let selected = modelDefinitions[0];
 let exporting = false;
 let graphicsFailed = false;
 let state = { playing: false, autoRotate: false, mode: "control", paused: false };
+let renderedUi = '';
 
 for (const model of modelDefinitions) {
   const button = document.createElement("button");
@@ -65,38 +66,45 @@ for (const model of modelDefinitions) {
 
 function updateState(next) {
   state = next;
-  actionButton.setAttribute("aria-pressed", String(state.playing));
-  rotateButton.setAttribute("aria-pressed", String(state.autoRotate));
-  actionLabel.textContent = `${selected.actionLabel} ${state.playing ? "멈춤" : "시작"}`;
-  simulation.dataset.mode = state.mode;
-  region.dataset.mode = state.mode;
-  region.dataset.paused = String(state.paused);
-  modeControl.setAttribute('aria-pressed', String(state.mode === 'control'));
-  modeInspect.setAttribute('aria-pressed', String(state.mode === 'inspect'));
-  modePhoto.setAttribute('aria-pressed', String(state.mode === 'photo'));
-  photoPanel.hidden = state.mode !== 'photo';
-  closePhotoButton.hidden = state.mode !== 'photo';
-  if (state.photo) {
-    const settings = state.photo;
-    const [w, h] = photoDimensions(settings.ratio, settings.longEdge);
-    const [ratioWidth, ratioHeight] = settings.ratio.split(':').map(Number);
-    simulation.style.setProperty('--photo-ratio', String(ratioWidth / ratioHeight));
-    document.querySelector('#photo-size').textContent = `${w} × ${h}`;
-    document.querySelector('#photo-preset').value = settings.preset;
-    document.querySelector('#studio-preset').value = settings.preset;
-    document.querySelector('#photo-resolution').value = settings.longEdge;
-    document.querySelector('#photo-exposure').value = settings.exposure;
-    document.querySelector('#exposure-value').textContent = `${settings.exposure.toFixed(2)}×`;
-    document.querySelectorAll('.photo-options').forEach(group => group.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.value === settings[group.dataset.setting]))));
-    document.querySelectorAll('.photo-panel button, .photo-panel select, .photo-panel input, .mode-bar button, #model-selector button, #reset-view, #download-model').forEach(control => { control.disabled = Boolean(state.capturing) || graphicsFailed || exporting; });
-    savePhotoButton.firstChild.textContent = state.capturing ? '촬영 중… ' : 'PNG 저장 ';
+  const ui = JSON.stringify([selected.id, state.mode, state.paused, state.playing,
+    state.autoRotate, state.capturing, state.photo, graphicsFailed, exporting]);
+  // Position telemetry changes continuously; buttons and photo settings don't.
+  // Avoid replacing their text/attributes ten times per second during motion.
+  if (renderedUi !== ui) {
+    renderedUi = ui;
+    actionButton.setAttribute("aria-pressed", String(state.playing));
+    rotateButton.setAttribute("aria-pressed", String(state.autoRotate));
+    actionLabel.textContent = `${selected.actionLabel} ${state.playing ? "멈춤" : "시작"}`;
+    simulation.dataset.mode = state.mode;
+    region.dataset.mode = state.mode;
+    region.dataset.paused = String(state.paused);
+    modeControl.setAttribute('aria-pressed', String(state.mode === 'control'));
+    modeInspect.setAttribute('aria-pressed', String(state.mode === 'inspect'));
+    modePhoto.setAttribute('aria-pressed', String(state.mode === 'photo'));
+    photoPanel.hidden = state.mode !== 'photo';
+    closePhotoButton.hidden = state.mode !== 'photo';
+    if (state.photo) {
+      const settings = state.photo;
+      const [w, h] = photoDimensions(settings.ratio, settings.longEdge);
+      const [ratioWidth, ratioHeight] = settings.ratio.split(':').map(Number);
+      simulation.style.setProperty('--photo-ratio', String(ratioWidth / ratioHeight));
+      document.querySelector('#photo-size').textContent = `${w} × ${h}`;
+      document.querySelector('#photo-preset').value = settings.preset;
+      document.querySelector('#studio-preset').value = settings.preset;
+      document.querySelector('#photo-resolution').value = settings.longEdge;
+      document.querySelector('#photo-exposure').value = settings.exposure;
+      document.querySelector('#exposure-value').textContent = `${settings.exposure.toFixed(2)}×`;
+      document.querySelectorAll('.photo-options').forEach(group => group.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.value === settings[group.dataset.setting]))));
+      document.querySelectorAll('.photo-panel button, .photo-panel select, .photo-panel input, .mode-bar button, #model-selector button, #reset-view, #download-model').forEach(control => { control.disabled = Boolean(state.capturing) || graphicsFailed || exporting; });
+      savePhotoButton.firstChild.textContent = state.capturing ? '촬영 중… ' : 'PNG 저장 ';
+    }
+    pauseButton.setAttribute('aria-pressed', String(state.paused));
+    pauseButton.textContent = state.paused ? '조종 재개' : '일시정지';
+    const guide = state.mode === 'control'
+      ? `${controlGuides[selected.id][1]}. R로 전체 초기화하세요.`
+      : state.mode === 'photo' ? '방향키 또는 드래그로 촬영 시점 회전, R로 전신 구도를 복원하세요.' : '방향키 또는 드래그로 시점 회전, Space로 부품 동작 시작·멈춤, R로 전체 초기화하세요.';
+    canvas.setAttribute('aria-label', `${selected.title}. ${guide} 스크롤·핀치 또는 더하기·빼기로 확대·축소하세요.`);
   }
-  pauseButton.setAttribute('aria-pressed', String(state.paused));
-  pauseButton.textContent = state.paused ? '조종 재개' : '일시정지';
-  const guide = state.mode === 'control'
-    ? `${controlGuides[selected.id][1]}. R로 전체 초기화하세요.`
-    : state.mode === 'photo' ? '방향키 또는 드래그로 촬영 시점 회전, R로 전신 구도를 복원하세요.' : '방향키 또는 드래그로 시점 회전, Space로 부품 동작 시작·멈춤, R로 전체 초기화하세요.';
-  canvas.setAttribute('aria-label', `${selected.title}. ${guide} 스크롤·핀치 또는 더하기·빼기로 확대·축소하세요.`);
   const motion = state.motion;
   if (motion) {
     const labels = { idle:'탐사 준비', move: selected.id === 'orbit' ? '걷는 중' : '이동 중', crouch:'도약 준비', rise:'상승 중', fall:'하강 중', land:'착지' };
@@ -105,7 +113,8 @@ function updateState(next) {
     if (status.textContent !== statusText) status.textContent = statusText;
     const altitude = document.querySelector('#altitude');
     altitude.hidden = !['drone','satellite','lander'].includes(selected.id);
-    altitude.textContent = `고도 ${motion.position.y.toFixed(1)}m`;
+    const altitudeText = `고도 ${motion.position.y.toFixed(1)}m`;
+    if (altitude.textContent !== altitudeText) altitude.textContent = altitudeText;
     // The same telemetry used by the UI is available for integration checks.
     for (const axis of ['x','y','z']) region.dataset[axis] = motion.position[axis].toFixed(4);
     region.dataset.heading = motion.heading.toFixed(4);
@@ -113,9 +122,11 @@ function updateState(next) {
     region.dataset.time = motion.time.toFixed(4);
     region.dataset.phase = motion.phase;
     region.dataset.grounded = String(motion.grounded);
-    document.querySelector('#control-guide').textContent = selected.id === 'drone' && motion.grounded
+    const guide = selected.id === 'drone' && motion.grounded
       ? 'Space·상승 버튼을 누르고 이륙 · WASD 이동 · Shift 하강'
       : controlGuides[selected.id][1];
+    const label = document.querySelector('#control-guide');
+    if (label.textContent !== guide) label.textContent = guide;
   }
   updateKeyboardStatus();
 }
