@@ -2,6 +2,8 @@
 
 아이보리 금속과 주황색 포인트를 공유하는 다섯 탐사 모델을 직접 조종합니다. Three.js로 모델과 행성 테스트장을 생성하며 외부 모델·이미지·텍스처·폰트를 요청하지 않습니다.
 
+[작품 열기](https://orbit-lab-nine.vercel.app) · [공개 저장소](https://github.com/sjh9714/orbit-lab)
+
 ## 실행
 
 Node.js 22.12 이상의 22.x 버전을 사용합니다.
