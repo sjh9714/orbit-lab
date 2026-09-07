@@ -1,0 +1,9 @@
+node_modules/
+dist/
+test-results/
+test-results-webkit/
+playwright-report/
+exports/
+.DS_Store
+.vercel/
+.env*

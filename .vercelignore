@@ -1,0 +1,12 @@
+.git/
+.vercel/
+node_modules/
+dist/
+exports/
+test-results/
+test-results-webkit/
+playwright-report/
+tests/
+playwright*.config.js
+.DS_Store
+.env*

@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#eae8e1" />
+    <meta
+      name="description"
+      content="ORBIT LAB의 다섯 탐사 동료. 로봇, 로버, 드론, 착륙선, 위성을 3D로 둘러보고 직접 움직여 보세요."
+    />
+    <title>ORBIT–01 · 작은 탐사 동료</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="./" aria-label="오빗 랩 홈">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+            <circle cx="16" cy="16" r="7" />
+            <ellipse
+              cx="16"
+              cy="16"
+              rx="15"
+              ry="6"
+              transform="rotate(-40 16 16)"
+            />
+            <circle class="satellite" cx="26" cy="7" r="3" />
+          </svg>
+          <span>ORBIT<span class="brand-light"> LAB</span></span>
+        </a>
+        <span class="header-caption">작은 동료와, 더 먼 곳으로.</span>
+        <div class="collection-id">
+          <span class="status-dot"></span> EXPLORER SERIES
+          <span class="collection-number">/ 5 OBJECTS</span>
+        </div>
+      </header>
+
+      <main>
+        <nav class="collection-nav" aria-label="모델 선택">
+          <div class="collection-heading">
+            <span>탐사대 만나보기</span><span>CHOOSE YOUR COMPANION</span>
+          </div>
+          <div class="model-selector" id="model-selector"></div>
+        </nav>
+        <section class="exhibit" aria-labelledby="model-title">
+          <div class="model-story">
+            <div class="eyebrow">
+              <span class="mini-cross" aria-hidden="true">+</span> THE EXPLORER
+              COLLECTION
+            </div>
+            <h1 id="model-title">
+              <span id="model-name">ORBIT</span
+              ><span class="title-number"
+                >–<span id="model-number">01</span
+                ><span class="title-dot">.</span></span
+              >
+            </h1>
+            <p class="tagline">작은 몸체,<br />커다란 호기심.</p>
+            <p class="description">
+              처음 만나는 행성도 두렵지 않도록.<br />늘 한 걸음 곁에서
+              탐험하는<br class="desktop-break" />
+              당신의 작은 탐사 동료입니다.
+            </p>
+
+            <div class="material-note">
+              <div class="material-swatches" aria-hidden="true">
+                <span class="swatch ivory"></span
+                ><span class="swatch orange"></span
+                ><span class="swatch graphite"></span>
+              </div>
+              <div>
+                <span class="note-heading">BUILT FOR DISCOVERY</span>
+                <p>아이보리 메탈 · 오렌지 · 그래파이트</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="simulation" data-mode="control">
+            <div class="mode-bar" aria-label="뷰어 모드">
+              <div class="mode-switch" role="group" aria-label="뷰어 모드 선택">
+                <button id="mode-control" type="button" aria-pressed="true" disabled>직접 조종</button>
+                <button id="mode-inspect" type="button" aria-pressed="false" disabled>모델 감상</button>
+                <button id="mode-photo" type="button" aria-pressed="false" disabled>사진 모드</button>
+              </div>
+              <button id="pause-motion" class="stage-button" type="button" aria-pressed="false" disabled>일시정지</button>
+              <button id="close-photo" class="stage-button" type="button" hidden>촬영 종료 ↗</button>
+            </div>
+          <div
+            class="viewer"
+            id="viewer-region"
+            aria-label="ORBIT-01 3D 모델 뷰어"
+          >
+            <div class="viewer-topline">
+              <span class="live-label"
+                ><span class="status-dot"></span> LIVE 3D</span
+              ><span class="view-label">MODEL VIEW / 01</span>
+            </div>
+            <canvas
+              id="robot-canvas"
+              tabindex="0"
+              aria-label="우주 탐사 로봇. 드래그 또는 방향키로 회전하고, 스크롤 또는 더하기·빼기 키로 확대·축소하세요."
+            ></canvas>
+            <div class="loading-state" id="loading-state" role="status">
+              <span class="loading-orbit"></span
+              ><span>작은 탐사 동료를 불러오는 중</span>
+            </div>
+            <div class="viewer-error" id="viewer-error" role="alert" hidden>
+              <span class="error-symbol">!</span
+              ><strong>3D 화면을 열지 못했어요.</strong>
+              <p>브라우저의 그래픽 가속 설정을 확인한 뒤 다시 시도해 주세요.</p>
+              <button id="reload-viewer" class="text-button" type="button">
+                다시 불러오기 ↗
+              </button>
+            </div>
+            <div class="model-coordinate" aria-hidden="true">
+              <svg viewBox="0 0 52 52">
+                <path d="M18 35V9M18 35l23 8M18 35L6 45" />
+                <circle cx="18" cy="35" r="2" />
+                <text x="14" y="7">Y</text>
+                <text x="43" y="47">X</text>
+                <text x="0" y="51">Z</text>
+              </svg>
+            </div>
+            <div class="viewer-caption">
+              <span class="caption-line"></span
+              ><span id="model-caption">준비됐어. 함께 가자!</span>
+            </div>
+            <div class="stage-tools" aria-label="모델 상호작용">
+              <button
+                class="action-button"
+                id="action-model"
+                type="button"
+                aria-pressed="false"
+                disabled
+              >
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path class="play-glyph" d="m9 5 10 7-10 7z" />
+                  <path class="pause-glyph" d="M9 5v14M16 5v14" /></svg
+                ><span id="action-label">손인사 시작</span>
+              </button>
+              <button
+                class="stage-button"
+                id="auto-rotate"
+                type="button"
+                aria-label="자동 회전"
+                aria-pressed="false"
+                title="자동 회전"
+                disabled
+              >
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M20 10a8 8 0 0 0-14-4L3 9m0-5v5h5M4 14a8 8 0 0 0 14 4l3-3m0 5v-5h-5"
+                  /></svg
+                ><span>자동 회전</span>
+              </button>
+              <div class="zoom-buttons" role="group" aria-label="확대와 축소">
+                <button
+                  class="stage-button"
+                  id="zoom-out"
+                  type="button"
+                  aria-label="축소"
+                  title="축소"
+                  disabled
+                >
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M6 12h12" />
+                  </svg></button
+                ><button
+                  class="stage-button"
+                  id="zoom-in"
+                  type="button"
+                  aria-label="확대"
+                  title="확대"
+                  disabled
+                >
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M6 12h12M12 6v12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="interaction-hint">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M9 10V6a3 3 0 0 1 6 0v4m-6 0h6m-6 0H7v6a5 5 0 0 0 10 0v-6h-2M12 5v3M3 11l-2 2 2 2m18-4 2 2-2 2"
+                /></svg
+              ><span class="pointer-hint"
+                >드래그로 둘러보기
+                <span class="hint-separator">·</span> 스크롤로 확대</span
+              ><span class="touch-hint"
+                >한 손가락으로 회전 <span class="hint-separator">·</span> 두
+                손가락으로 확대</span
+              >
+            </div>
+          </div>
+            <div class="studio-bar" aria-label="감상 조명">
+              <span>STUDIO LIGHT</span>
+              <select id="studio-preset" aria-label="감상 조명 선택"><option value="warm">웜 스튜디오</option><option value="cool">쿨 스튜디오</option><option value="rim">림 라이트</option></select>
+            </div>
+            <aside class="photo-panel" aria-label="사진 설정" hidden>
+              <div class="photo-heading"><span>THE MINIATURE PORTRAIT</span><h2>작은 탐험의 기록</h2><p>현재 포즈 그대로, 당신의 시선으로.</p></div>
+              <label class="photo-field">조명<select id="photo-preset"><option value="warm">웜 스튜디오</option><option value="cool">쿨 스튜디오</option><option value="rim">림 라이트</option></select></label>
+              <fieldset><legend>구도</legend><div class="photo-options" data-setting="composition"><button data-value="full" aria-pressed="true" type="button">전신</button><button data-value="detail" aria-pressed="false" type="button">주요 장비</button><button data-value="back" aria-pressed="false" type="button">후면</button></div></fieldset>
+              <fieldset><legend>화면 비율</legend><div class="photo-options" data-setting="ratio"><button data-value="16:9" aria-pressed="true" type="button">16:9</button><button data-value="1:1" aria-pressed="false" type="button">1:1</button><button data-value="4:5" aria-pressed="false" type="button">4:5</button></div></fieldset>
+              <label class="photo-field">출력 크기 · 긴 변<select id="photo-resolution"><option value="2048">2048px</option><option value="3840">3840px</option></select></label>
+              <label class="photo-field" for="photo-exposure"><span>노출 <output id="exposure-value">1.00×</output></span><input id="photo-exposure" type="range" min="0.6" max="1.6" step="0.05" value="1" /></label>
+              <p class="photo-help">드래그로 회전 · 스크롤·핀치로 확대<br />배경과 전시대를 포함한 PNG를 저장해요.</p>
+              <button id="save-photo" class="download-button" type="button">PNG 저장 <span id="photo-size">2048 × 1152</span></button>
+              <p id="photo-status" role="status" aria-live="polite"></p>
+              <button id="photo-lower" class="text-button" type="button" hidden>2048px로 다시 저장</button>
+              <p class="photo-footnote">촬영 종료 후 조종과 동작은 일시정지 상태로 돌아갑니다.</p>
+            </aside>
+            <div class="control-panel" id="control-panel" aria-label="모델 조종">
+              <div class="direction-pad" role="group" aria-label="이동 방향">
+                <button data-control="forward" type="button" aria-label="앞으로" aria-pressed="false" disabled>↑</button>
+                <button data-control="left" type="button" aria-label="왼쪽" aria-pressed="false" disabled>←</button>
+                <span aria-hidden="true">MOVE</span>
+                <button data-control="right" type="button" aria-label="오른쪽" aria-pressed="false" disabled>→</button>
+                <button data-control="backward" type="button" aria-label="뒤로" aria-pressed="false" disabled>↓</button>
+              </div>
+              <div class="control-info">
+                <div class="telemetry"><span class="status-dot"></span><strong id="motion-status" role="status">탐사 준비</strong><span id="altitude" hidden>고도 0.0m</span></div>
+                <p id="control-guide">WASD / 방향키 이동 · Space 점프</p>
+                <p class="focus-guide" id="keyboard-status" role="status">키보드 조종: 3D 화면을 클릭하세요 · 화면 버튼은 누르고 조종</p>
+              </div>
+              <div class="action-pad" role="group" aria-label="모델 동작">
+                <button data-control="primary" id="primary-action" type="button" aria-pressed="false" disabled><span id="primary-label">점프</span><kbd>SPACE</kbd></button>
+                <button data-control="secondary" id="secondary-action" type="button" aria-pressed="false" disabled hidden><span>하강</span><kbd>SHIFT</kbd></button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="exhibit-toolbar" aria-label="모델 정보와 조작">
+          <div class="model-index">
+            <span class="index-number">01</span>
+            <div>
+              <span class="index-title">행성 탐사 로봇</span
+              ><span class="index-detail">ORIGINAL 3D OBJECT</span>
+            </div>
+          </div>
+          <div class="model-properties">
+            <div>
+              <span class="property-label">성격</span
+              ><span id="model-personality">호기심 많음</span>
+            </div>
+            <div>
+              <span class="property-label">특기</span
+              ><span id="model-specialty">낯선 곳에서 친구 만들기</span>
+            </div>
+          </div>
+          <div class="viewer-actions">
+            <button
+              class="reset-button"
+              id="reset-view"
+              aria-label="전체 초기화"
+              type="button"
+              disabled
+            >
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 10a8 8 0 1 1 .5 6M4 4v6h6" /></svg
+              ><span>전체 초기화</span>
+            </button>
+            <button
+              class="download-button"
+              id="download-model"
+              type="button"
+              disabled
+            >
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4" /></svg
+              ><span id="download-label">GLB 다운로드</span
+              ><span class="file-badge">.glb</span>
+            </button>
+          </div>
+          <p
+            class="download-status"
+            id="download-status"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <span>IMAGINED ON EARTH. READY FOR ANYWHERE.</span
+        ><span
+          >탐험은 작은 호기심에서 시작됩니다.
+          <span class="footer-star" aria-hidden="true">✳</span></span
+        >
+      </footer>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
